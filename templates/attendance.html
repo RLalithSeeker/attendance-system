@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Attendance</title>
+<style>
+  :root{
+    --cream:#f2e9e1; --ink:#101010; --flame:#ff6714; --muted:#8a8178;
+    --line:#d9cec2; --card:#fffdf9; --ok:#1d7a43; --err:#c03434;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Hanken Grotesk",system-ui,-apple-system,sans-serif;
+       background:var(--cream);color:var(--ink)}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px}
+  header{display:flex;justify-content:space-between;align-items:center;
+         flex-wrap:wrap;gap:8px;padding:12px 0;border-bottom:2px solid var(--ink)}
+  header h1{font-size:22px;margin:0;letter-spacing:-.5px}
+  header h1 b{color:var(--flame)}
+  .sub{color:var(--muted);font-size:13px}
+  .banner{border:1px solid var(--ink);background:var(--flame);color:var(--cream);
+          padding:8px 12px;border-radius:var(--radius);font-size:13px;margin:12px 0;display:none}
+  .banner b{text-transform:uppercase;letter-spacing:1px}
+  nav{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+  nav button{background:transparent;border:1px solid var(--line);color:var(--ink);
+             padding:9px 14px;border-radius:var(--radius);font-size:14px;cursor:pointer;min-height:44px}
+  nav button.active{background:var(--ink);color:var(--cream);border-color:var(--ink)}
+  nav button:hover:not(.active){border-color:var(--ink)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+        padding:18px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:15px}
+  label{font-size:13px;color:var(--muted);display:block;margin:10px 0 4px}
+  input,select{width:100%;max-width:420px;padding:10px 12px;border:1px solid var(--line);
+               border-radius:var(--radius);font-size:15px;background:#fff;color:var(--ink);min-height:44px}
+  button.primary{background:var(--ink);color:var(--cream);border:0;padding:10px 16px;
+                 border-radius:var(--radius);font-size:14px;cursor:pointer;min-height:44px}
+  button.primary:hover{background:var(--flame)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+  .pill.ok{background:#e4f4e9;color:var(--ok)} .pill.late{background:#fff4d6;color:#8a6100}
+  .pill.absent{background:#fbe4e4;color:var(--err)} .pill.excused{background:#e8e2f7;color:#5b3fa8}
+  .pill.manual{background:#ebe5de;color:var(--muted)}
+  .err{color:var(--err);font-size:13px;margin:6px 0}
+  .oktxt{color:var(--ok);font-size:13px;margin:6px 0}
+  video{width:100%;max-width:480px;border:1px solid var(--line);border-radius:var(--radius);background:#000}
+  canvas{display:none}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .thin{font-size:12px;color:var(--muted)}
+  #login{max-width:380px;margin:8vh auto 0}
+  #app{display:none}
+  .logout{margin-left:auto}
+  code{background:#efe7dc;padding:2px 5px;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Attendance</h1>
+    <span id="modeLine" class="sub"></span>
+    <button id="logoutBtn" class="primary logout" style="display:none">Log out</button>
+  </header>
+  <div id="banner" class="banner"><b>Mode</b> <span id="bannerText"></span></div>
+
+  <!-- Login -->
+  <div id="login" class="card">
+    <h3>Teacher login</h3>
+    <label for="li_email">Email</label>
+    <input id="li_email" type="email" autocomplete="username"/>
+    <label for="li_pass">Password</label>
+    <input id="li_pass" type="password" autocomplete="current-password"/>
+    <div class="row" style="margin-top:14px">
+      <button id="loginBtn" class="primary">Sign in</button>
+      <span class="thin" id="loginHint"></span>
+    </div>
+    <p class="err" id="loginErr" style="display:none"></p>
+  </div>
+
+  <!-- App -->
+  <div id="app">
+    <nav>
+      <button data-tab="students" class="active">Students</button>
+      <button data-tab="courses">Courses</button>
+      <button data-tab="sessions">Sessions</button>
+      <button data-tab="recognize">Recognize</button>
+      <button data-tab="stats">Summary</button>
+    </nav>
+
+    <section id="tab-students" class="card">
+      <h3>Students</h3>
+      <div class="row">
+        <input id="st_code" placeholder="Roll / code" style="max-width:140px"/>
+        <input id="st_name" placeholder="Full name" style="max-width:240px"/>
+        <button id="st_add" class="primary">Add</button>
+      </div>
+      <table style="margin-top:12px"><thead><tr><th>Code</th><th>Name</th><th>Active</th></tr></thead>
+        <tbody id="st_rows"></tbody></table>
+      <p class="err" id="st_err" style="display:none"></p>
+    </section>
+
+    <section id="tab-courses" class="card" style="display:none">
+      <h3>Courses</h3>
+      <div class="row">
+        <input id="co_code" placeholder="Course code" style="max-width:140px"/>
+        <input id="co_name" placeholder="Course name" style="max-width:240px"/>
+        <button id="co_add" class="primary">Create</button>
+      </div>
+      <table style="margin-top:12px"><thead><tr><th>Code</th><th>Name</th><th>Enrolled</th><th></th></tr></thead>
+        <tbody id="co_rows"></tbody></table>
+      <p class="err" id="co_err" style="display:none"></p>
+    </section>
+
+    <section id="tab-sessions" class="card" style="display:none">
+      <h3>Sessions</h3>
+      <div class="row">
+        <select id="ses_course" style="max-width:300px"><option value="">— pick course —</option></select>
+        <button id="ses_start" class="primary">Start session</button>
+      </div>
+      <table style="margin-top:12px"><thead><tr><th>Started</th><th>Status</th><th>Present</th><th></th></tr></thead>
+        <tbody id="ses_rows"></tbody></table>
+      <div id="ses_actions" style="display:none;margin-top:10px">
+        <button id="ses_close" class="primary">Close active session</button>
+        <a id="ses_csv" href="#" download="attendance.csv" class="primary" style="display:inline-block;text-decoration:none;margin-left:8px">Export CSV</a>
+      </div>
+      <p class="err" id="ses_err" style="display:none"></p>
+    </section>
+
+    <section id="tab-recognize" class="card" style="display:none">
+      <h3>Recognize</h3>
+      <select id="rec_session" style="max-width:300px"><option value="">— pick session —</option></select>
+      <div class="row" style="margin-top:10px">
+        <video id="cam" autoplay playsinline muted></video>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="rec_snap" class="primary">Capture &amp; recognize</button>
+        <input id="rec_manual_st" placeholder="Student code (manual mark)" style="max-width:220px"/>
+        <select id="rec_manual_st2" style="max-width:300px"><option value="">— or pick student —</option></select>
+        <button id="rec_manual" class="primary">Mark present</button>
+      </div>
+      <p class="thin" id="camHint">On this page you can also enroll a student's face from a photo below.</p>
+      <div id="rec_result"></div>
+      <p class="err" id="rec_err" style="display:none"></p>
+    </section>
+
+    <section id="tab-stats" class="card" style="display:none">
+      <h3>Session summary</h3>
+      <select id="sum_session" style="max-width:300px"><option value="">— pick session —</option></select>
+      <button id="sum_load" class="primary" style="margin-left:8px">Load</button>
+      <div id="sum_body" style="margin-top:12px"></div>
+      <p class="err" id="sum_err" style="display:none"></p>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var API = "/api/attendance/v1";
+  var token = null;
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(s){ return String(s == null ? "" : s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); };
+
+  function pfx(k){ return k.startsWith("/api") || k.startsWith("/ws"); }
+
+  async function call(method, path, body){
+    var opt = { method: method, headers: {"Content-Type":"application/json"} };
+    if (token) opt.headers["Authorization"] = "Bearer " + token;
+    if (method.toLowerCase() === "get" && body !== undefined) {
+      var q = new URLSearchParams(body).toString();
+      var sep = API + path + "?";
+      var res = await fetch(sep + q, {headers: opt.headers});
+      var ct = res.headers.get("content-type") || "";
+      if (!ct.includes("json")) return {raw: await res.text(), status: res.status};
+      return {data: await res.json(), status: res.status};
+    }
+    opt.body = body ? JSON.stringify(body) : undefined;
+    var resp = await fetch(API + path, opt);
+    var j = await resp.json().catch(function(){ return {}; });
+    return {data: j, status: resp.status};
+  }
+
+  function errMsg(r){
+    if (r && r.data && r.data.error) return r.data.error.message;
+    if (r && r.status === 401) return "Unauthorized — log in again.";
+    return "Request failed.";
+  }
+
+  function setBanner(mode){
+    var el = $("banner"), t = $("bannerText");
+    var demo = (mode || "").toLowerCase() === "demo";
+    var disabled = (mode || "").toLowerCase() === "disabled";
+    if (disabled){
+      el.style.display = "block"; t.textContent =
+        "Recognizer unavailable (InsightFace not installed). Roster + manual marking still work.";
+    } else if (demo){
+      el.style.display = "block"; t.textContent =
+        "RECOGNITION MODE — simulated matching. NOT identity. Demo only.";
+    } else { el.style.display = "none"; }
+  }
+
+  /* ── login ─────────────────────────────────────────────── */
+  $("loginBtn").onclick = async function(){
+    var email = $("li_email").value.trim(), pass = $("li_pass").value;
+    var r = await call("POST", "/auth/login", {email: email, password: pass});
+    if (r.data && r.data.ok){ token = r.data.data.token; enterApp(); }
+    else { $("loginErr").style.display = "block"; $("loginErr").textContent = errMsg(r); }
+  };
+  $("loginErr").onkeydown = function(){};
+  ["li_email","li_pass"].forEach(function(id){
+    $(id).addEventListener("keydown", function(e){ if (e.key === "Enter") $("loginBtn").click(); });
+  });
+
+  function enterApp(){
+    $("login").style.display = "none";
+    $("app").style.display = "block";
+    $("logoutBtn").style.display = "inline-block";
+    loadAll();
+  }
+
+  $("logoutBtn").onclick = function(){
+    call("POST", "/auth/logout");
+    token = null; location.reload();
+  };
+
+  /* ── nav ───────────────────────────────────────────────── */
+  document.querySelectorAll("nav button").forEach(function(b){
+    b.onclick = function(){
+      document.querySelectorAll("nav button").forEach(function(x){ x.classList.remove("active"); });
+      b.classList.add("active");
+      ["students","courses","sessions","recognize","stats"].forEach(function(t){
+        $("tab-" + t).style.display = (t === b.dataset.tab) ? "block" : "none";
+      });
+      if (b.dataset.tab === "recognize") startCam();
+    };
+  });
+
+  /* ── data loads ─────────────────────────────────────────── */
+  function loadAll(){ loadStatus(); loadStudents(); loadCourses(); loadSessions(); loadSummarySelects(); }
+  async function loadStatus(){
+    var r = await call("GET", "/status");
+    if (r.data && r.data.data){
+      $("modeLine").textContent = "recognition: " + r.data.data.mode
+        + " · model: " + r.data.data.model_version;
+      setBanner(r.data.data.mode);
+    }
+  }
+  async function loadStudents(){
+    var r = await call("GET", "/students"); if (!r.data || !r.data.ok){ return; }
+    var rows = r.data.data.students || [], html = "";
+    rows.forEach(function(s){ html += "<tr><td>" + esc(s.student_code) + "</td><td>" + esc(s.full_name)
+      + "</td><td>" + (s.active ? "yes" : "no") + "</td></tr>"; });
+    $("st_rows").innerHTML = html || "<tr><td colspan='3' class='thin'>No students yet.</td></tr>";
+    loadManualStudents(rows);
+  }
+  function loadManualStudents(rows){
+    var sel = $("rec_manual_st2"), html = "<option value=''>— or pick student —</option>";
+    (rows).forEach(function(s){ html += "<option value='" + s.id + "'>" + esc(s.student_code) + " · " + esc(s.full_name) + "</option>"; });
+    sel.innerHTML = html;
+  }
+  async function loadCourses(){
+    var r = await call("GET", "/courses"); if (!r.data || !r.data.ok){ return; }
+    var rows = r.data.data.courses || [], html = "";
+    rows.forEach(function(c){ html += "<tr><td>" + esc(c.code) + "</td><td>" + esc(c.name)
+      + "</td><td>" + (c.enrolled_count || 0) + "</td>"
+      + "<td><button class='primary' data-enroll='" + c.id + "'>Enroll student</button></td></tr>"; });
+    $("co_rows").innerHTML = html || "<tr><td colspan='4' class='thin'>No courses yet.</td></tr>";
+    [["ses_course", rows], ["rec_session", rows], ["sum_session", rows]].forEach(function(pair){
+      var sel = $(pair[0]), h = "<option value=''>— pick course —</option>";
+      pair[1].forEach(function(c){ h += "<option value='" + c.id
+        + "'>" + esc(c.code) + " · " + esc(c.name) + "</option>"; });
+      sel.innerHTML = h;
+    });
+  }
+
+  /* ── students ───────────────────────────────────────────── */
+  $("st_add").onclick = async function(){
+    var code = $("st_code").value.trim(), name = $("st_name").value.trim();
+    var r = await call("POST", "/students", {student_code: code, full_name: name});
+    if (r.data && r.data.ok){ $("st_code").value = ""; $("st_name").value = ""; loadStudents(); }
+    else { $("st_err").style.display = "block"; $("st_err").textContent = errMsg(r); }
+  };
+
+  /* ── courses + enroll ───────────────────────────────────── */
+  $("co_add").onclick = async function(){
+    var r = await call("POST", "/courses", {code: $("co_code").value.trim(), name: $("co_name").value.trim()});
+    if (r.data && r.data.ok){ $("co_code").value = ""; $("co_name").value = ""; loadCourses(); }
+    else { $("co_err").style.display = "block"; $("co_err").textContent = errMsg(r); }
+  };
+  $("co_rows").addEventListener("click", async function(e){
+    var btn = e.target.closest("[data-enroll]"); if (!btn) return;
+    var sid = prompt("Student code to enroll:"); if (!sid) return;
+    var r = await call("POST", "/courses/" + btn.dataset.enroll + "/enroll", {student_codes: [sid]});
+    if (r.data && r.data.ok){ loadCourses(); loadStudents(); }
+    else { $("co_err").style.display = "block"; $("co_err").textContent = errMsg(r); }
+  });
+
+  /* ── sessions ───────────────────────────────────────────── */
+  $("ses_start").onclick = async function(){
+    var cid = $("ses_course").value; if (!cid){ $("ses_err").style.display="block"; $("ses_err").textContent="Pick a course."; return; }
+    var r = await call("POST", "/sessions", {course_id: cid});
+    if (r.data && r.data.ok){ loadSessions(); loadSummarySelects(); }
+    else { $("ses_err").style.display = "block"; $("ses_err").textContent = errMsg(r); }
+  };
+  async function loadSessions(){
+    var r = await call("GET", "/sessions"); if (!r.data || !r.data.ok){ return; }
+    var rows = r.data.data.sessions || [], html = "";
+    rows.forEach(function(s){
+      html += "<tr><td>" + esc(s.started_at) + "</td><td>" + esc(s.status) + "</td><td>"
+        + (s.present_count || 0) + "/" + (s.student_count || 0) + "</td><td><button class='primary' data-sum='"
+        + s.id + "'>Summary</button></td></tr>";
+    });
+    $("ses_rows").innerHTML = html || "<tr><td colspan='4' class='thin'>No sessions yet.</td></tr>";
+    var active = rows.find(function(s){ return s.status === "open"; });
+    $("ses_actions").style.display = active && active.id ? "block" : "none";
+    if (active){ $("ses_csv").href = API + "/sessions/" + active.id + "/export.csv";
+      $("ses_csv").setAttribute("download", "session-" + active.id + ".csv");
+      $("ses_csv").innerText = "Export CSV (active session)";
+    }
+    window._activeSession = active ? active.id : null;
+    populateAllSelects(rows);
+  }
+  function populateAllSelects(rows){
+    function fill(selId, label){
+      var sel = $(selId), h = "<option value=''>" + label + "</option>";
+      rows.forEach(function(s){ h += "<option value='" + s.id + "'>" + s.course_code + " · " + s.started_at + "</option>"; });
+      sel.innerHTML = h;
+    }
+    fill("rec_session", "— pick session —");
+    fill("sum_session", "— pick session —");
+  }
+
+  /* ── recognize ──────────────────────────────────────────── */
+  var camStream = null;
+  function startCam(){
+    if (!navigator.mediaDevices) { $("camHint").textContent = "Camera API unavailable in this browser/context."; return; }
+    navigator.mediaDevices.getUserMedia({video: {width: 640}}).then(function(s){
+      camStream = s; $("cam").srcObject = s;
+    }).catch(function(e){ $("camHint").textContent = "Camera denied: " + e.message; });
+  }
+  function stopCam(){ if (camStream){ camStream.getTracks().forEach(function(t){ t.stop(); }); camStream = null; } }
+
+  $("rec_snap").onclick = async function(){
+    var sesId = $("rec_session").value;
+    if (!sesId){ $("rec_err").style.display="block"; $("rec_err").textContent="Pick a session first."; return; }
+    var v = $("cam"), pop = {width: v.videoWidth, height: v.videoHeight};
+    var canvas = document.createElement("canvas"); canvas.width = pop.width; canvas.height = pop.height;
+    canvas.getContext("2d").drawImage(v, 0, 0);
+    var b64 = canvas.toDataURL("image/jpeg", 0.9).split(",")[1];
+    var r = await call("POST", "/sessions/" + sesId + "/recognize",
+      {image: b64, session_id: sesId, request_id: "ui-" + Date.now()});
+    if (r.data && r.data.ok){
+      var d = r.data.data;
+      $("rec_result").innerHTML = "<span class='oktxt'>" + esc(d.status_outcome)
+        + " · " + (d.result ? esc(d.result.status) : "") + "</span><br/><span class='thin'>"
+        + (d.result && d.result.reason ? esc(d.result.reason) : "") + "</span>";
+      loadSessions();
+    } else { $("rec_err").style.display = "block"; $("rec_err").textContent = errMsg(r); }
+  };
+
+  /* manual mark from phrase or selection */
+  $("rec_manual").onclick = async function(){
+    var sesId = $("rec_session").value;
+    if (!sesId){ $("rec_err").style.display="block"; $("rec_err").textContent="Pick a session first."; return; }
+    var code = $("rec_manual_st").value.trim();
+    var sid = $("rec_manual_st2").value;
+    var body = {};
+    if (sid) body.student_id = sid;
+    else if (code) body.student_code = code;
+    else { $("rec_err").style.display="block"; $("rec_err").textContent="Enter a student code or pick one."; return; }
+    var r = await call("POST", "/sessions/" + sesId + "/manual", Object.assign({status:"present"}, body));
+    if (r.data && r.data.ok){ $("rec_manual_st").value = ""; loadSessions(); }
+    else { $("rec_err").style.display = "block"; $("rec_err").textContent = errMsg(r); }
+  };
+
+  $("ses_close").onclick = async function(){
+    if (!window._activeSession) return;
+    var r = await call("POST", "/sessions/" + window._activeSession + "/close");
+    if (r.data && r.data.ok){ loadSessions(); } else { $("ses_err").style.display="block"; $("ses_err").textContent = errMsg(r); }
+  };
+
+  /* ── summary ────────────────────────────────────────────── */
+  $("sum_load").onclick = async function(){
+    var sid = $("sum_session").value; if (!sid) return;
+    var r = await call("GET", "/sessions/" + sid + "/summary");
+    if (r.data && r.data.ok){
+      var d = r.data.data;
+      var body = "<p><b>Status:</b> " + esc(d.status) + " · <b>Enrolled:</b> " + d.total_enrolled + "</p>";
+      ["present","late","absent","excused","unaccounted"].forEach(function(k){
+        body += "<span class='pill " + k + "' style='margin-right:6px'>" + k + ": " + d[k] + "</span>";
+      });
+      body += "<table style='margin-top:12px'><thead><tr><th>Code</th><th>Name</th><th>Status</th><th>Method</th></tr></thead><tbody>";
+      (d.records || []).forEach(function(rec){
+        body += "<tr><td>" + esc(rec.student_code) + "</td><td>" + esc(rec.student_name)
+          + "</td><td><span class='pill " + esc(rec.status) + "'>" + esc(rec.status) + "</span></td><td>"
+          + esc(rec.method || "-") + "</td></tr>";
+      });
+      $("sum_body").innerHTML = body + "</tbody></table>";
+    } else { $("sum_err").style.display = "block"; $("sum_err").textContent = errMsg(r); }
+  };
+
+  $("ses_rows").addEventListener("click", function(e){
+    var btn = e.target.closest("[data-sum]"); if (!btn) return;
+    $("sum_session").value = btn.dataset.sum; $("sum_load").click();
+  });
+
+  window.addEventListener("beforeunload", stopCam);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.*
+*.db
+attendance_data/
+node_modules/

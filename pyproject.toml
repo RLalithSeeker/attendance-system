@@ -1,0 +1,23 @@
+[project]
+name = "attendance-system"
+version = "0.1.0"
+description = "Standalone face-recognition class attendance (no camera required for demo/disabled modes)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "python-multipart>=0.0.9",
+    "numpy>=1.24",
+    "opencv-python>=4.8",
+]
+
+[project.optional-dependencies]
+real = ["insightface>=0.7", "onnxruntime>=1.15"]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
