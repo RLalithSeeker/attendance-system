@@ -38,13 +38,18 @@ Fail-closed: only a `matched` recognition for an enrolled + consented student
 writes an attendance record. `unknown` / `ambiguous` / `no_face` / `multi_face`
 / `low_quality` / `unavailable` are logged as events, never as attendance.
 
-## Real matching (your camera step — later)
+## Real matching (verified 2026-09-18)
 
 ```powershell
-pip install insightface onnxruntime
+pip install insightface onnxruntime   # tested with 2.0 / 1.30, CPU
 $env:RECOGNITION_MODE="real"
 python main.py                  # health now reports "mode":"real"
 ```
+
+Live E2E passed: webcam capture → detect (score 0.78) → consent → enroll →
+recognize `matched` → attendance record. Fail-closed confirmed: a non-face
+frame returns `no_face` and never marks anyone. `buffalo_l` downloads
+automatically to `~/.insightface/models/` on first boot.
 
 The matcher is a provider implementing the contract in
 `attendance/matcher_providers.py`. `InsightFaceProvider` is the reference

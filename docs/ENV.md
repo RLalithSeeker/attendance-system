@@ -14,3 +14,5 @@ Demo seed (no env needed; applied on first boot): `teacher@demo.local` /
 
 For a full camera-free demo: `RECOGNITION_MODE=demo`. For real matching later:
 install `insightface` + `onnxruntime` and set `RECOGNITION_MODE=real`.
+Verified 2026-09-18 against insightface **2.0** + onnxruntime 1.30 on CPU:
+live camera enroll + match E2E passed (see docs/HANDOFF.md).

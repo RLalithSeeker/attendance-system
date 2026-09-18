@@ -1,0 +1,9 @@
+# Windows-first, no Docker by default; honest cloud strategy
+
+Reuse installed runtime/package manager and existing start scripts. Discover exact commands before documenting. Proposed `.env.example` values: `DATABASE_URL=sqlite:///...`, `ATTENDANCE_ENABLED=true`, `RECOGNITION_MODE=real|disabled|demo`, `ATTENDANCE_TIMEZONE=Asia/Kolkata`, `MATCH_THRESHOLD` (no fabricated default), `CLOUD_SYNC_ENABLED=false`, `CORS_ORIGINS=...`, `SESSION_SECRET=...` (placeholder only), `FACE_TEMPLATE_DIR=...`. Do not override root app environment. If CUDA RTX4050 works, reuse it; CPU fallback only if existing supported. No forced Docker, root/admin, system-wide changes.
+
+Local path: FastAPI app + actual frontend + SQLite + local inference/gallery. `scripts/dev-attendance.ps1` optional to activate existing venv, run migrations, start actual backend and UI. Provide precise manual alternative and `/health` checks. Distinguish localhost-only demo from cloud deployment.
+
+Cloud target: managed Postgres + HTTPS API + hosted frontend with on-prem recognition edge bridge; no direct public camera stream, no template uploads. Decide if existing architecture exposes safe attendance event transport. Edge→cloud event must be authenticated, integrity protected, authorized to class/session, idempotent and avoid spoofable client assertions. For MVP cloud DB on secured network may be sufficient with deployment guide; don't promise functioning hybrid if no bridge is implemented. Credentials, domain, firewall changes, payment, deployment are USER ACTION ONLY. Give environment checklist and exact commands after repo inspection; redact all sensitive values. If unavailable, document cloud readiness and status NOT DEPLOYED.
+
+Deployment docs: migrations, secrets, HTTPS origin, database backups, access control, retention, log rotation, health/rollback and data deletion. Never expose biometric gallery on public endpoint.

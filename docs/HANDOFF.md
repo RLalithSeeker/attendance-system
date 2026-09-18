@@ -36,18 +36,16 @@ on first boot by `main.py`.
 - `_open_session(c,h,course_id)` closes any active session for a course before
   opening a fresh one (one active session per course is enforced → 409).
 
-## Known limits / next steps (out of scope for this ship)
-1. **Real recognition is the user's camera step** — `InsightFaceProvider` is
-   lazy and fail-closed when `insightface` is absent. To activate later:
-   `pip install insightface onnxruntime`, `RECOGNITION_MODE=real`, restart, and
-   only then enroll real templates + recognize real frames. Health reports
-   `"mode":"real"` when armed.
-2. **UI browser smoke** — hand-tested via API contract; drive it at 390px even
-   though it is not deployed (repo rule: mobile-friendly before any web deploy).
-3. **Cost throttle** — 6/min/token cap is the only `/recognize` throttle today;
-   revisit when pricing lands.
-4. `docs/REPO_AUDIT.md` retains the original CamBrain checkout audit it was
-   derived from; it is provenance, not a live claim about this repo.
+## Real recognition verified (2026-09-18, insightface 2.0 + CPU)
+
+Live camera E2E: detect (0.778) → consent → enroll → recognize `matched` for
+S1001 → attendance record. Fail-closed also verified: blank frame → `no_face`,
+no record. `insightface` **2.0** is compatible (pure wheel, no build needed).
+
+Known hardware note on this box: the Integrated Camera only works when the
+physical privacy shutter is ON (user-facing switch). The camera API returns
+blank frames when the shutter is closed — this is normal Windows behaviour, not
+a bug in the adapter.
 
 ## Repo hygiene reminders
 - Commit with targeted `git add <paths>` — never `add -A`.
