@@ -1,0 +1,9 @@
+# Security and privacy non-negotiables
+
+Face images and templates are sensitive biometric data. Use only consented volunteers for real tests; obtain institutional approval before actual class rollout, provide non-biometric manual alternative, publish purpose/retention/deletion notice, restrict authorized teacher access. Do not claim regulatory compliance without legal review. Avoid importing unrelated surveillance features into attendance.
+
+Auth: rely on existing proven auth or implement salted password hashing with vetted library, secure session/token settings, deny-by-default per-resource teacher ownership, no unauthenticated read/export; environment secrets never committed. Cloud transport HTTPS and DB TLS. CORS restricted to exact trusted origins. Input validate MIME and decoded image size, decompression bombs, path traversal, malicious CSV formula cells (escape leading `=,+,-,@` and tab/control prefixes). Idempotency key and UNIQUE(session_id,student_id) under concurrency. Audit manual changes, enroll/revoke, exports and authentication events where appropriate. Never log passwords, frames, embeddings, tokens or raw biometric matching vectors.
+
+Biometric security: least-privilege filesystem, optional encrypted templates at rest with externally configured key if existing stack supports it, no public media directory, narrow retention and verified deletion procedure. Raw frames ephemeral. Avoid uploading images to Groq/Gemini/VLM. Distinguish a real liveness system from unvalidated blink/motion heuristics. For MVP clearly state photo-spoofing residual risk and supervise attendance/manual approval for high-stakes use.
+
+Threat tests: impersonate teacher, access someone else's class, forge student_id in recognize payload, replay request, simultaneous double check-in, revoked template, malformed image, oversized file, unknown face, CSV injection, debug/mock mode in production. Ensure safe failures.

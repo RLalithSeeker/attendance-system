@@ -1,0 +1,1 @@
+{"session_id":"demo-session-id","status":"unknown","timestamp":"2026-09-18T12:00:00Z","request_id":"example-idempotency-key","note":"Illustrative shape only; server derives identity from verified matcher, never client-supplied student_id."}

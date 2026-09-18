@@ -1,0 +1,3 @@
+# Adapter outcome contract
+
+Conceptual typed result: `status: matched|unknown|ambiguous|no_face|multi_face|unavailable|low_quality`; `student_id` populated ONLY for validated `matched`; `score`, `score_kind` similarity|distance, `model_version`, `reason` internal safe enum; time recorded by server. Do not send embedding, template, face image or untrusted self-asserted identity back to browser. Threshold and ambiguity policy controlled server-side. `matched` alone is not attendance: check consent, active roster, session, stable-match policy, teacher access and DB uniqueness. Runtime adapter failure → `unavailable`, not random match.
