@@ -47,8 +47,14 @@ physical privacy shutter is ON (user-facing switch). The camera API returns
 blank frames when the shutter is closed — this is normal Windows behaviour, not
 a bug in the adapter.
 
+Mobile UI verified (2026-09-18): Playwright at 390x844 in demo mode — no
+horizontal scroll (scrollWidth == 390) on login, app-after-login, and tabs; all
+tap targets ≥ 44px; fluid layout (flex-wrap + max-width + 100% tables); no media
+queries needed.
+
 ## Repo hygiene reminders
 - Commit with targeted `git add <paths>` — never `add -A`.
 - System python 3.13.5 (fastapi/pydantic/pytest/httpx/cv2/numpy) runs the suite;
-  insightface NOT importable here by design.
+  insightface 2.0 + onnxruntime 1.30 also installed (real mode verified; run
+  `pytest` camera-free in demo/disabled mode).
 - No secrets in the repo; tokens hashed at rest in SQLite.
